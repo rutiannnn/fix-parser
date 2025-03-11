@@ -6,6 +6,18 @@ A high-performance FIX (Financial Information eXchange) protocol message parser 
 designed
 for low-latency trading systems, focusing on efficient parsing and minimal object allocation.
 
+## Usage Example
+
+```java
+String fixMsg = "8=FIX.4.2\u00019=153\u000135=D\u0001...";
+FixMessage message = FixParser.parse(fixMsg.getBytes());
+
+// Access fields
+String symbol = message.getString(55);  // Symbol
+double price = message.getDouble(44);   // Price
+int quantity = message.getInt(38);      // Quantity
+```
+
 ## Key Features
 
 - Zero-copy parsing of FIX messages
@@ -19,7 +31,6 @@ for low-latency trading systems, focusing on efficient parsing and minimal objec
 ### Implementation Assumptions
 
 1. Message Format
-   - FIX 4.2 protocol support
    - Fields are delimited by SOH (0x01) character
    - Tag-value pairs are separated by '=' (0x3d) character
    - Messages are well-formed (basic validation only)
@@ -40,13 +51,11 @@ for low-latency trading systems, focusing on efficient parsing and minimal objec
 ### Design Decisions
 
 1. API Design
-   - Simple interface with essential methods
-   - Type-specific getters (getString, getInt, getDouble)
+   - No assumption of FIX version so it is caller's responsibility to interpret field values
    - Raw byte access for custom handling
 
 2. Error Handling
    - Runtime exceptions for missing fields
-   - Null returns for optional fields
    - No complex validation (assumed to be handled upstream)
 
 3. Thread Safety
@@ -59,20 +68,7 @@ for low-latency trading systems, focusing on efficient parsing and minimal objec
 1. Do I need to support all versions of FIX?
 1. Do I need to support FIX SBE?
 1. Will I get performance gain from parallelism?
-1. How to support repeating group?
 1. How to visualize the jfr file from benchmark?
-
-## Usage Example
-
-```java
-String fixMsg = "8=FIX.4.2\u00019=153\u000135=D\u0001...";
-FixMessage message = FixParser.parse(fixMsg.getBytes());
-
-// Access fields
-String symbol = message.getString(55);  // Symbol
-double price = message.getDouble(44);   // Price
-int quantity = message.getInt(38);      // Quantity
-```
 
 ## Requirements
 
@@ -92,6 +88,7 @@ mvn clean install
 1. [FIX 4.2 Specification][fix-4-2]
 1. [FIX Simple Binary Encoding (SBE)][fix-sbe]
 1. [FIX TagValue Encoding][fix-tag-value-encoding]
+1. [FIX Repeating Group][fix-repeating-group]
 
 ### YouTube Videos
 
@@ -111,6 +108,8 @@ mvn clean install
 [copilot]: https://copilot.microsoft.com/
 
 [fix-4-2]: https://www.fixtrading.org/standards/fix-4-2/]
+
+[fix-repeating-group]: https://ref.onixs.biz/fix-repeating-group.html
 
 [fix-sbe]: https://www.fixtrading.org/standards/sbe/
 
