@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>fix</groupId>
+        <artifactId>fix-parser</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>fix-parser-messages44</artifactId>
+
+    <description>Generate FIX message classes from FIX specification 4.4</description>
+
+    <properties>
+        <generated.sources.dir>${project.build.directory}/generated-sources/fix</generated.sources.dir>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>fix</groupId>
+            <artifactId>fix-parser-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>fix</groupId>
+            <artifactId>fix-parser-base</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Run the code generator -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-fix-messages</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>fix.parser.codegen.GenerateFixClasses</mainClass>
+                            <arguments>
+                                <argument>${project.basedir}/src/main/resources/FIX44.xml</argument>
+                                <argument>${generated.sources.dir}</argument>
+                                <argument>fix.parser.messages44</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Add generated sources to compilation -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${generated.sources.dir}</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
