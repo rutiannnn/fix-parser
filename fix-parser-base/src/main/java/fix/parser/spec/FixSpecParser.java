@@ -1,4 +1,4 @@
-package fix.parser.codegen;
+package fix.parser.spec;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

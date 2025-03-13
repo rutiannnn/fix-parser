@@ -1,5 +1,8 @@
 package fix.parser.codegen;
 
+import fix.parser.spec.FixSpec;
+import fix.parser.spec.FixSpecParser;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 

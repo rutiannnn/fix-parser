@@ -1,4 +1,4 @@
-package fix.parser.codegen;
+package fix.parser.spec;
 
 public enum FixType {
     STRING("String"),

@@ -21,6 +21,7 @@
         <module>fix-parser-codegen</module>
         <module>fix-parser-messages44</module>
         <module>fix-parser-base</module>
+        <!--        <module>fix-parser-impl</module>-->
     </modules>
 
     <dependencyManagement>
@@ -30,19 +31,16 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${junit.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
                 <version>${junit.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- project modules -->
@@ -61,6 +59,11 @@
                 <artifactId>fix-parser-codegen</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!--            <dependency>-->
+            <!--                <groupId>fix</groupId>-->
+            <!--                <artifactId>fix-parser-impl</artifactId>-->
+            <!--                <version>${project.version}</version>-->
+            <!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 

@@ -11,4 +11,11 @@
 
     <description>Classes to generate code based on input FIX specification in xml format</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>fix</groupId>
+            <artifactId>fix-parser-base</artifactId>
+        </dependency>
+    </dependencies>
+
 </project>
