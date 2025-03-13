@@ -10,7 +10,8 @@ public record FixSpec(
     MessageSection trailer,
     List<MessageDef> messages,
     Map<String, ComponentDef> components,
-    Map<String, FieldDef> fields
+    Map<String, FieldDef> fields,
+    Map<Integer, FieldDef> fieldsByNumber
 ) {
 }
 
