@@ -63,15 +63,6 @@ public record Segment(
         );
     }
 
-    public Segment getSegment(int tagNumber) {
-        for (Segment segment : segments) {
-            if (segment.rawMessage.tags()[segment.start()] == tagNumber) {
-                return segment;
-            }
-        }
-        return null;
-    }
-
     public Segment[] getSegments(int tagNumber) {
         int count = 0;
         for (Segment segment : segments) {
