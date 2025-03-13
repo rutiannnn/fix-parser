@@ -51,7 +51,7 @@ class FixMessageParserTest {
         assertEquals(1, msg.getHeader().getMsgSeqNum());        // MsgSeqNum
         assertEquals("123456", msg.getClOrdID());                 // ClOrdID
         assertEquals("IBM", msg.getInstrument().getSymbol());                     // Symbol
-        assertEquals(1, msg.getSide());                         // Side
+        assertEquals('1', msg.getSide());                         // Side
         assertEquals(150.25, msg.getPrice(), 0.001);             // Price
         assertEquals(1000, msg.getOrderQtyData().getOrderQty());                    // OrderQty
     }

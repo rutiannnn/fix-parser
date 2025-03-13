@@ -4,12 +4,15 @@ import fix.parser.message.base.FixMessage;
 import fix.parser.message.base.Segment;
 import fix.parser.message.base.UnderlyingMessage;
 import fix.parser.messages44.Fields;
+import fix.parser.spec.FieldDef;
 import fix.parser.spec.FixSpec;
 import fix.parser.spec.FixType;
 import fix.parser.spec.MessageDef;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FixMessageParser {
@@ -46,7 +49,7 @@ public class FixMessageParser {
             underlyingMessage,
             0,
             fieldCount,
-            new Segment[]{}
+            parseRepeatingGroups(underlyingMessage, 0, fieldCount, tags, valuePositions, valueLengths)
         );
 
         String msgType = new String(
@@ -150,5 +153,71 @@ public class FixMessageParser {
         } catch (Exception e) {
             throw new RuntimeException("Failed to create message instance", e);
         }
+    }
+
+    private Segment[] parseRepeatingGroups(UnderlyingMessage message, int start, int end,
+                                           int[] tags, int[] valuePositions, int[] valueLengths) {
+        final List<Segment> groups = new ArrayList<>();
+
+        for (int i = start; i < end; i++) {
+            // Check if current tag is a repeating group counter (NoXXX field)
+            FieldDef field = spec.fieldsByNumber().get(tags[i]);
+            if (field != null && field.type() == FixType.NUMINGROUP) {
+                int numInGroup = Integer.parseInt(
+                    new String(message.rawMessage(), valuePositions[i], valueLengths[i], StandardCharsets.ISO_8859_1)
+                );
+
+                if (numInGroup > 0) {
+                    // First field after counter is the first field of the group
+                    int firstGroupTag = tags[i + 1];
+                    int currentPos = i + 1;
+
+                    // Process each instance of the group
+                    for (int groupIndex = 0; groupIndex < numInGroup; groupIndex++) {
+                        int groupStart = currentPos;
+
+                        // Find the end of this group instance
+                        int groupEnd = findGroupEnd(tags, firstGroupTag, groupStart, end);
+
+                        // Recursively parse nested groups within this group instance
+                        Segment[] nestedGroups = parseRepeatingGroups(
+                            message,
+                            groupStart,
+                            groupEnd,
+                            tags,
+                            valuePositions,
+                            valueLengths
+                        );
+
+                        // Create segment for this group instance with its nested groups
+                        groups.add(new Segment(
+                            message,
+                            groupStart,
+                            groupEnd,
+                            nestedGroups
+                        ));
+
+                        currentPos = groupEnd;
+                    }
+
+                    // Skip processed fields
+                    i = currentPos - 1;
+                }
+            }
+        }
+
+        return groups.toArray(new Segment[0]);
+    }
+
+    private int findGroupEnd(int[] tags, int firstGroupTag, int start, int end) {
+        int pos = start + 1;
+        while (pos < end) {
+            // If we find the first tag again, it's the start of the next group instance
+            if (tags[pos] == firstGroupTag) {
+                return pos;
+            }
+            pos++;
+        }
+        return end;
     }
 }
