@@ -14,14 +14,14 @@ import java.util.Map;
 
 public class FixSpecParser {
     private final Document document;
-    private final Map<String, FieldInfo> fieldInfoMap;
+    private final Map<String, FieldDef> fieldMap;
     private final Map<String, ComponentDef> componentMap;
 
     public FixSpecParser(File xmlFile) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         this.document = builder.parse(xmlFile);
-        this.fieldInfoMap = new HashMap<>();
+        this.fieldMap = new HashMap<>();
         this.componentMap = new HashMap<>();
     }
 
@@ -30,7 +30,7 @@ public class FixSpecParser {
         String major = root.getAttribute("major");
         String minor = root.getAttribute("minor");
 
-        buildFieldInfoMap(root);
+        buildFieldMap(root);
         buildComponentMap(root);
 
         NodeList headerNodes = root.getElementsByTagName("header");
@@ -57,10 +57,10 @@ public class FixSpecParser {
             }
         }
 
-        return new FixSpec(major, minor, header, trailer, messages, componentMap);
+        return new FixSpec(major, minor, header, trailer, messages, componentMap, fieldMap);
     }
 
-    private void buildFieldInfoMap(Element root) {
+    private void buildFieldMap(Element root) {
         NodeList fieldsNodes = root.getElementsByTagName("fields");
         if (fieldsNodes.getLength() > 0) {
             Element fieldsElement = (Element) fieldsNodes.item(0);
@@ -70,7 +70,7 @@ public class FixSpecParser {
                 String name = fieldElement.getAttribute("name");
                 int number = Integer.parseInt(fieldElement.getAttribute("number"));
                 FixType type = FixType.fromString(fieldElement.getAttribute("type"));
-                fieldInfoMap.put(name, new FieldInfo(number, type));
+                fieldMap.put(name, new FieldDef(number, name, type, false)); // default required to false
             }
         }
     }
@@ -165,12 +165,12 @@ public class FixSpecParser {
         String name = element.getAttribute("name");
         boolean required = "Y".equals(element.getAttribute("required"));
 
-        FieldInfo info = fieldInfoMap.get(name);
-        if (info == null) {
-            throw new IllegalStateException("Field info not found for field: " + name);
+        FieldDef baseField = fieldMap.get(name);
+        if (baseField == null) {
+            throw new IllegalStateException("Field not found: " + name);
         }
 
-        return new FieldDef(info.number(), name, info.type(), required);
+        return new FieldDef(baseField.number(), name, baseField.type(), required);
     }
 
     private GroupDef parseGroup(Element element) {
@@ -181,6 +181,4 @@ public class FixSpecParser {
         return new GroupDef(name, required, section.fields(), section.groups());
     }
 
-    private record FieldInfo(int number, FixType type) {
-    }
 }

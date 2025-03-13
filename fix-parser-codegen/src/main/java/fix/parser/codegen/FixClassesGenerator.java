@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class FixClassesGenerator {
@@ -62,67 +62,19 @@ public class FixClassesGenerator {
                 
                 """.formatted(packageName, spec.major(), spec.minor()));
 
-            Set<String> processedFields = new HashSet<>();
-
-            // Process fields from header
-            if (spec.header() != null) {
-                processFields(out, spec.header().fields(), processedFields);
-            }
-
-            // Process fields from trailer
-            if (spec.trailer() != null) {
-                processFields(out, spec.trailer().fields(), processedFields);
-            }
-
-            // Process fields from messages
-            for (MessageDef msg : spec.messages()) {
-                processFields(out, msg.fields(), processedFields);
-                for (GroupDef group : msg.groups()) {
-                    processGroupFields(out, group, processedFields);
-                }
-            }
-
-            // Process fields from components
-            for (ComponentDef component : spec.components().values()) {
-                processFields(out, component.fields(), processedFields);
-                for (GroupDef group : component.groups()) {
-                    processGroupFields(out, group, processedFields);
-                }
-            }
+            // Generate constants for all fields in sorted order by field number
+            spec.fields().values().stream()
+                .sorted(Comparator.comparingInt(FieldDef::number))
+                .forEach(field -> generateFieldConstant(out, field));
 
             out.println("}");
         }
     }
 
-    private void processGroupFields(PrintWriter out, GroupDef group, Set<String> processedFields) {
-        processFields(out, group.fields(), processedFields);
-        for (GroupDef nestedGroup : group.groups()) {
-            processGroupFields(out, nestedGroup, processedFields);
-        }
-    }
-
-    private void processFields(PrintWriter out, List<FieldDef> fields, Set<String> processedFields) {
-        for (FieldDef field : fields) {
-            if (processedFields.add(field.name())) {
-                generateFieldConstant(out, field);
-            }
-        }
-    }
-
     private static void generateFieldConstant(PrintWriter out, FieldDef field) {
-        String constName = toConstantName(field.name());
-        String comment = field.required() ? "Required" : "Optional";
-        out.printf("""
-                /** %s field (%d) - %s
-                 * Type: %s (%s)
-                 */
-                public static final int %s = %d;
-                
-                """,
-            field.name(), field.number(), comment,
-            field.type(), field.getJavaType(),
-            constName, field.number()
-        );
+        String constantName = toConstantName(field.name());
+        out.printf("    public static final int %s = %d;%n%n",
+            constantName, field.number());
     }
 
     private static String toConstantName(String name) {

@@ -9,7 +9,8 @@ record FixSpec(
     MessageSection header,
     MessageSection trailer,
     List<MessageDef> messages,
-    Map<String, ComponentDef> components
+    Map<String, ComponentDef> components,
+    Map<String, FieldDef> fields
 ) {
 }
 
