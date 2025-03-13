@@ -88,12 +88,13 @@ public class FixClassesGenerator {
             out.print("""
                 package %s;
                 
+                import fix.parser.message.base.FixMessage;
                 import fix.parser.message.base.Segment;
                 import fix.parser.message.base.UnderlyingMessage;
                 import java.time.Instant;
                 import java.time.LocalDate;
                 
-                public class %s {
+                public class %s implements FixMessage {
                     private final Segment segment;
                     private final Header header;
                     private final Trailer trailer;
