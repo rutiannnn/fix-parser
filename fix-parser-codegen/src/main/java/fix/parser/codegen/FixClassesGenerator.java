@@ -12,6 +12,7 @@ public class FixClassesGenerator {
     private final FixSpec spec;
     private final String packageName;
     private final Path outputDir;
+    private final Set<String> generatedGroupClasses = new HashSet<>();
 
     public FixClassesGenerator(FixSpec spec, String packageName, Path outputDir) {
         this.spec = spec;
@@ -20,6 +21,7 @@ public class FixClassesGenerator {
     }
 
     public void generate() throws IOException {
+        generatedGroupClasses.clear();
         // Create package directory
         Path packageDir = outputDir.resolve(packageName.replace('.', '/'));
         Files.createDirectories(packageDir);
@@ -107,7 +109,7 @@ public class FixClassesGenerator {
         }
     }
 
-    private void generateFieldConstant(PrintWriter out, FieldDef field) {
+    private static void generateFieldConstant(PrintWriter out, FieldDef field) {
         String constName = toConstantName(field.name());
         String comment = field.required() ? "Required" : "Optional";
         out.printf("""
@@ -123,7 +125,7 @@ public class FixClassesGenerator {
         );
     }
 
-    private String toConstantName(String name) {
+    private static String toConstantName(String name) {
         return name.toUpperCase().replace(" ", "_");
     }
 
@@ -249,7 +251,7 @@ public class FixClassesGenerator {
         }
     }
 
-    private void generateFieldGetter(PrintWriter out, FieldDef field) {
+    private static void generateFieldGetter(PrintWriter out, FieldDef field) {
         String methodName = "get" + field.name();
         String javaType = field.getJavaType();
         String getterMethod = switch (field.type()) {
@@ -275,8 +277,11 @@ public class FixClassesGenerator {
 
     private void generateGroupGetter(PrintWriter out, GroupDef group, Path packageDir) {
         String groupClassName = group.name() + "Group";
-        // Generate the group class
-        generateGroupClass(groupClassName, group, packageDir);
+
+        // Only generate the group class if it hasn't been generated before
+        if (generatedGroupClasses.add(groupClassName)) {
+            generateGroupClass(groupClassName, group, packageDir);
+        }
 
         out.printf("""
                 public %s get%s() {
