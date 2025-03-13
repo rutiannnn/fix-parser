@@ -2,6 +2,7 @@ package fix.parser.codegen;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -33,27 +34,28 @@ public class FixSpecParser {
         buildFieldMap(root);
         buildComponentMap(root);
 
-        NodeList headerNodes = root.getElementsByTagName("header");
-        NodeList trailerNodes = root.getElementsByTagName("trailer");
-        NodeList messagesNodes = root.getElementsByTagName("messages");
-
         MessageSection header = null;
+        NodeList headerNodes = root.getElementsByTagName("header");
         if (headerNodes.getLength() > 0) {
             header = parseSection((Element) headerNodes.item(0));
         }
 
         MessageSection trailer = null;
+        NodeList trailerNodes = root.getElementsByTagName("trailer");
         if (trailerNodes.getLength() > 0) {
             trailer = parseSection((Element) trailerNodes.item(0));
         }
 
         List<MessageDef> messages = new ArrayList<>();
+        NodeList messagesNodes = root.getElementsByTagName("messages");
         if (messagesNodes.getLength() > 0) {
             Element messagesElement = (Element) messagesNodes.item(0);
-            NodeList messageNodes = messagesElement.getElementsByTagName("message");
-            for (int i = 0; i < messageNodes.getLength(); i++) {
-                Element messageElement = (Element) messageNodes.item(i);
-                messages.add(parseMessage(messageElement));
+            NodeList childNodes = messagesElement.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node node = childNodes.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE && "message".equals(node.getNodeName())) {
+                    messages.add(parseMessage((Element) node));
+                }
             }
         }
 
@@ -64,13 +66,16 @@ public class FixSpecParser {
         NodeList fieldsNodes = root.getElementsByTagName("fields");
         if (fieldsNodes.getLength() > 0) {
             Element fieldsElement = (Element) fieldsNodes.item(0);
-            NodeList fieldNodes = fieldsElement.getElementsByTagName("field");
-            for (int i = 0; i < fieldNodes.getLength(); i++) {
-                Element fieldElement = (Element) fieldNodes.item(i);
-                String name = fieldElement.getAttribute("name");
-                int number = Integer.parseInt(fieldElement.getAttribute("number"));
-                FixType type = FixType.fromString(fieldElement.getAttribute("type"));
-                fieldMap.put(name, new FieldDef(number, name, type, false)); // default required to false
+            NodeList childNodes = fieldsElement.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node node = childNodes.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE && "field".equals(node.getNodeName())) {
+                    Element fieldElement = (Element) node;
+                    String name = fieldElement.getAttribute("name");
+                    int number = Integer.parseInt(fieldElement.getAttribute("number"));
+                    FixType type = FixType.fromString(fieldElement.getAttribute("type"));
+                    fieldMap.put(name, new FieldDef(number, name, type));
+                }
             }
         }
     }
@@ -79,40 +84,35 @@ public class FixSpecParser {
         NodeList componentsNodes = root.getElementsByTagName("components");
         if (componentsNodes.getLength() > 0) {
             Element componentsElement = (Element) componentsNodes.item(0);
-            NodeList componentNodes = componentsElement.getElementsByTagName("component");
-            for (int i = 0; i < componentNodes.getLength(); i++) {
-                Element componentElement = (Element) componentNodes.item(i);
-                String name = componentElement.getAttribute("name");
-                ComponentDef component = parseComponent(componentElement);
-                componentMap.put(name, component);
+            NodeList childNodes = componentsElement.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node node = childNodes.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE && "component".equals(node.getNodeName())) {
+                    Element componentElement = (Element) node;
+                    String name = componentElement.getAttribute("name");
+                    ComponentDef component = parseComponent(name, componentElement);
+                    componentMap.put(name, component);
+                }
             }
         }
     }
 
-    private ComponentDef parseComponent(Element element) {
-        String name = element.getAttribute("name");
+    private ComponentDef parseComponent(String name, Element element) {
         List<FieldDef> fields = new ArrayList<>();
         List<GroupDef> groups = new ArrayList<>();
         List<ComponentRef> components = new ArrayList<>();
 
-        NodeList fieldNodes = element.getElementsByTagName("field");
-        for (int i = 0; i < fieldNodes.getLength(); i++) {
-            Element fieldElement = (Element) fieldNodes.item(i);
-            fields.add(parseField(fieldElement));
-        }
-
-        NodeList groupNodes = element.getElementsByTagName("group");
-        for (int i = 0; i < groupNodes.getLength(); i++) {
-            Element groupElement = (Element) groupNodes.item(i);
-            groups.add(parseGroup(groupElement));
-        }
-
-        NodeList componentNodes = element.getElementsByTagName("component");
-        for (int i = 0; i < componentNodes.getLength(); i++) {
-            Element componentElement = (Element) componentNodes.item(i);
-            String componentName = componentElement.getAttribute("name");
-            boolean required = "Y".equals(componentElement.getAttribute("required"));
-            components.add(new ComponentRef(componentName, required));
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element childElement = (Element) node;
+                switch (node.getNodeName()) {
+                    case "field" -> fields.add(parseField(childElement));
+                    case "group" -> groups.add(parseGroup(childElement));
+                    case "component" -> components.add(new ComponentRef(childElement.getAttribute("name")));
+                }
+            }
         }
 
         return new ComponentDef(name, fields, groups, components);
@@ -122,28 +122,16 @@ public class FixSpecParser {
         List<FieldDef> fields = new ArrayList<>();
         List<GroupDef> groups = new ArrayList<>();
 
-        NodeList fieldNodes = element.getElementsByTagName("field");
-        for (int i = 0; i < fieldNodes.getLength(); i++) {
-            Element fieldElement = (Element) fieldNodes.item(i);
-            fields.add(parseField(fieldElement));
-        }
-
-        NodeList groupNodes = element.getElementsByTagName("group");
-        for (int i = 0; i < groupNodes.getLength(); i++) {
-            Element groupElement = (Element) groupNodes.item(i);
-            groups.add(parseGroup(groupElement));
-        }
-
-        NodeList componentNodes = element.getElementsByTagName("component");
-        for (int i = 0; i < componentNodes.getLength(); i++) {
-            Element componentElement = (Element) componentNodes.item(i);
-            String name = componentElement.getAttribute("name");
-            ComponentDef componentDef = componentMap.get(name);
-            if (componentDef == null) {
-                throw new IllegalStateException("Component not found: " + name);
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element childElement = (Element) node;
+                switch (node.getNodeName()) {
+                    case "field" -> fields.add(parseField(childElement));
+                    case "group" -> groups.add(parseGroup(childElement));
+                }
             }
-            fields.addAll(componentDef.fields());
-            groups.addAll(componentDef.groups());
         }
 
         return new MessageSection(fields, groups);
@@ -154,31 +142,51 @@ public class FixSpecParser {
         String msgtype = element.getAttribute("msgtype");
         String msgcat = element.getAttribute("msgcat");
 
-        MessageSection section = parseSection(element);
-        if (name.equals("Reject")) {
-            System.out.printf("%s\n", section);
+        List<FieldDef> fields = new ArrayList<>();
+        List<GroupDef> groups = new ArrayList<>();
+        List<ComponentRef> components = new ArrayList<>();
+
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element childElement = (Element) node;
+                switch (node.getNodeName()) {
+                    case "field" -> fields.add(parseField(childElement));
+                    case "group" -> groups.add(parseGroup(childElement));
+                    case "component" -> components.add(new ComponentRef(childElement.getAttribute("name")));
+                }
+            }
         }
-        return new MessageDef(name, msgtype, msgcat, section.fields(), section.groups());
+
+        return new MessageDef(name, msgtype, msgcat, fields, groups, components);
     }
 
     private FieldDef parseField(Element element) {
-        String name = element.getAttribute("name");
-        boolean required = "Y".equals(element.getAttribute("required"));
-
-        FieldDef baseField = fieldMap.get(name);
-        if (baseField == null) {
-            throw new IllegalStateException("Field not found: " + name);
-        }
-
-        return new FieldDef(baseField.number(), name, baseField.type(), required);
+        return fieldMap.get(element.getAttribute("name"));
     }
 
     private GroupDef parseGroup(Element element) {
         String name = element.getAttribute("name");
-        boolean required = "Y".equals(element.getAttribute("required"));
 
-        MessageSection section = parseSection(element);
-        return new GroupDef(name, required, section.fields(), section.groups());
+        List<FieldDef> fields = new ArrayList<>();
+        List<GroupDef> groups = new ArrayList<>();
+        List<ComponentRef> components = new ArrayList<>();
+
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element childElement = (Element) node;
+                switch (node.getNodeName()) {
+                    case "field" -> fields.add(parseField(childElement));
+                    case "group" -> groups.add(parseGroup(childElement));
+                    case "component" -> components.add(new ComponentRef(childElement.getAttribute("name")));
+                }
+            }
+        }
+
+        return new GroupDef(name, fields, groups, components);
     }
 
 }

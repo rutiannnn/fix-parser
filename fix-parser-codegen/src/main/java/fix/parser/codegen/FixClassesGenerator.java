@@ -119,6 +119,11 @@ public class FixClassesGenerator {
                 generateFieldGetter(out, field);
             }
 
+            // Generate getters for components
+            for (ComponentRef component : message.components()) {
+                generateComponentGetter(out, component);
+            }
+
             // Generate getters for groups
             for (GroupDef group : message.groups()) {
                 generateGroupGetter(out, group, packageDir);
@@ -161,6 +166,11 @@ public class FixClassesGenerator {
                 generateGroupGetter(out, group, packageDir);
             }
 
+            // Generate getters for components
+            for (ComponentRef nestedComponent : component.components()) {
+                generateComponentGetter(out, nestedComponent);
+            }
+
             out.println("}");
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate " + className, e);
@@ -190,6 +200,11 @@ public class FixClassesGenerator {
             // Generate getters for fields
             for (FieldDef field : group.fields()) {
                 generateFieldGetter(out, field);
+            }
+
+            // Generate getters for components
+            for (ComponentRef component : group.components()) {
+                generateComponentGetter(out, component);
             }
 
             // Generate getters for nested groups
@@ -235,14 +250,10 @@ public class FixClassesGenerator {
             generateGroupClass(groupClassName, group, packageDir);
         }
 
-        out.printf("""
-                public %s get%s() {
-                    Segment innerSegment = segment.getSegment(%d);
-                    return innerSegment != null ? new %s(innerSegment) : null;
-                }
-                
-                public %s[] get%ss() {
-                    Segment[] segments = segment.getSegments(%d);
+        out.printf("""                
+                public %s[] get%s() {
+                    int preceding_idx = segment.rawMessage().indexOfTag(Fields.%s, segment.start(), segment.end());
+                    Segment[] segments = segment.getSegments(segment.rawMessage().tags()[preceding_idx + 1]);
                     %s[] result = new %s[segments.length];
                     for (int i = 0; i < segments.length; i++) {
                         result[i] = new %s(segments[i]);
@@ -251,9 +262,8 @@ public class FixClassesGenerator {
                 }
                 
                 """,
-            groupClassName, group.name(), group.fields().get(0).number(),
-            groupClassName,
-            groupClassName, group.name(), group.fields().get(0).number(),
+            groupClassName, group.name().startsWith("No") ? group.name().substring(2) : group.name(),
+            toConstantName(group.name()),
             groupClassName, groupClassName,
             groupClassName);
     }
@@ -349,5 +359,18 @@ public class FixClassesGenerator {
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate Trailer class", e);
         }
+    }
+
+    private void generateComponentGetter(PrintWriter out, ComponentRef component) {
+        String componentClassName = component.name() + "Component";
+
+        out.printf("""
+                public %s get%s() {
+                    return new %s(this.segment);
+                }
+                
+                """,
+            componentClassName, component.name(),
+            componentClassName);
     }
 }

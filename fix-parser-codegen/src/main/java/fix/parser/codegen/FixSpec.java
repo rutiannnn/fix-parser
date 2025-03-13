@@ -25,15 +25,15 @@ record MessageDef(
     String msgtype,
     String msgcat,
     List<FieldDef> fields,
-    List<GroupDef> groups
+    List<GroupDef> groups,
+    List<ComponentRef> components
 ) {
 }
 
 record FieldDef(
     int number,
     String name,
-    FixType type,
-    boolean required
+    FixType type
 ) {
     String getJavaType() {
         return type.getJavaType();
@@ -42,9 +42,9 @@ record FieldDef(
 
 record GroupDef(
     String name,
-    boolean required,
     List<FieldDef> fields,
-    List<GroupDef> groups
+    List<GroupDef> groups,
+    List<ComponentRef> components
 ) {
 }
 
@@ -57,7 +57,6 @@ record ComponentDef(
 }
 
 record ComponentRef(
-    String name,
-    boolean required
+    String name
 ) {
 }

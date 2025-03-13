@@ -18,7 +18,7 @@ public record UnderlyingMessage(
      * @param tag The tag number to search for
      * @return The index of the tag, or -1 if not found
      */
-    int indexOfTag(int tag, int start, int end) {
+    public int indexOfTag(int tag, int start, int end) {
         for (int i = start; i < end && i < tags.length; i++) {
             if (tags[i] == tag) {
                 return i;
