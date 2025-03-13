@@ -38,17 +38,9 @@ public class FixMessageParser {
 
         parseFields(messageBytes, tags, valuePositions, valueLengths);
 
-        UnderlyingMessage underlyingMessage = new UnderlyingMessage(
-            messageBytes,
-            tags,
-            valuePositions,
-            valueLengths
-        );
+        UnderlyingMessage underlyingMessage = new UnderlyingMessage(messageBytes, tags, valuePositions, valueLengths);
 
-        Segment segment = new Segment(
-            underlyingMessage,
-            0,
-            fieldCount,
+        Segment segment = new Segment(underlyingMessage, 0, fieldCount,
             parseRepeatingGroups(underlyingMessage, 0, fieldCount, tags, valuePositions, valueLengths)
         );
 
@@ -180,22 +172,10 @@ public class FixMessageParser {
                         int groupEnd = findGroupEnd(tags, firstGroupTag, groupStart, end);
 
                         // Recursively parse nested groups within this group instance
-                        Segment[] nestedGroups = parseRepeatingGroups(
-                            message,
-                            groupStart,
-                            groupEnd,
-                            tags,
-                            valuePositions,
-                            valueLengths
-                        );
+                        Segment[] nestedGroups = parseRepeatingGroups(message, groupStart, groupEnd, tags, valuePositions, valueLengths);
 
                         // Create segment for this group instance with its nested groups
-                        groups.add(new Segment(
-                            message,
-                            groupStart,
-                            groupEnd,
-                            nestedGroups
-                        ));
+                        groups.add(new Segment(message, groupStart, groupEnd, nestedGroups));
 
                         currentPos = groupEnd;
                     }
