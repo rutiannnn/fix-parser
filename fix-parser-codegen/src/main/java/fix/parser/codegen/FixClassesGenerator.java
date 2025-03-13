@@ -269,10 +269,10 @@ public class FixClassesGenerator {
 
         out.printf("""
             public %s %s() {
-                return this.segment.%s(%d);
+                return this.segment.%s(Fields.%s);
             }
             
-            """, javaType, methodName, getterMethod, field.number());
+            """, javaType, methodName, getterMethod, toConstantName(field.name()));
     }
 
     private void generateGroupGetter(PrintWriter out, GroupDef group, Path packageDir) {
