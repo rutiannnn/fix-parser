@@ -6,6 +6,8 @@ import fix.parser.spec.FixSpec;
 import fix.parser.spec.FixSpecParser;
 
 import java.io.File;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,8 @@ public class FixParserBenchmark {
     private final byte[] complexMessage;
     private final NewOrderSingleMessage parsedSimpleMessage;
     private final NewOrderSingleMessage parsedComplexMessage;
+    private final List<GarbageCollectorMXBean> garbageCollectors;
+    private final long[] gcCountsBefore;
 
     public FixParserBenchmark() throws Exception {
         // Initialize parser
@@ -47,6 +51,9 @@ public class FixParserBenchmark {
         // Pre-parse messages for getter benchmarks
         parsedSimpleMessage = (NewOrderSingleMessage) parser.parse(simpleMessage);
         parsedComplexMessage = (NewOrderSingleMessage) parser.parse(complexMessage);
+
+        garbageCollectors = ManagementFactory.getGarbageCollectorMXBeans();
+        gcCountsBefore = new long[garbageCollectors.size()];
     }
 
     private void runBenchmark(String name, Runnable benchmark) {
@@ -65,6 +72,11 @@ public class FixParserBenchmark {
             Thread.currentThread().interrupt();
         }
 
+        // Record GC counts before
+        for (int i = 0; i < garbageCollectors.size(); i++) {
+            gcCountsBefore[i] = garbageCollectors.get(i).getCollectionCount();
+        }
+
         // Measure memory before
         long memoryBefore = RUNTIME.totalMemory() - RUNTIME.freeMemory();
 
@@ -79,14 +91,31 @@ public class FixParserBenchmark {
         // Measure memory after
         long memoryAfter = RUNTIME.totalMemory() - RUNTIME.freeMemory();
 
+        // Check if GC occurred during benchmark
+        boolean gcOccurred = false;
+        for (int i = 0; i < garbageCollectors.size(); i++) {
+            long gcCountAfter = garbageCollectors.get(i).getCollectionCount();
+            if (gcCountAfter > gcCountsBefore[i]) {
+                System.out.printf("Warning: GC occurred during benchmark: %s (%d collections)%n",
+                    garbageCollectors.get(i).getName(),
+                    gcCountAfter - gcCountsBefore[i]);
+                gcOccurred = true;
+            }
+        }
+
         // Calculate statistics
-        LongSummaryStatistics stats = samples.stream().mapToLong(Long::valueOf).summaryStatistics();
+        LongSummaryStatistics stats = samples.stream()
+            .mapToLong(Long::valueOf)
+            .summaryStatistics();
 
         // Print results
         System.out.printf("Average time: %.2f ns%n", stats.getAverage());
         System.out.printf("Min time: %d ns%n", stats.getMin());
         System.out.printf("Max time: %d ns%n", stats.getMax());
         System.out.printf("Memory delta: %.2f MB%n", (memoryAfter - memoryBefore) / (1024.0 * 1024.0));
+        if (!gcOccurred) {
+            System.out.println("No GC occurred during benchmark");
+        }
     }
 
     public void runAllBenchmarks() {
