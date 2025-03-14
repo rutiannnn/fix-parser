@@ -92,7 +92,6 @@ public class FixClassesGenerator {
                 
                 import fix.parser.message.base.FixMessage;
                 import fix.parser.message.base.Segment;
-                import fix.parser.message.base.UnderlyingMessage;
                 import java.time.Instant;
                 import java.time.LocalDate;
                 
@@ -146,7 +145,6 @@ public class FixClassesGenerator {
                 package %s;
                 
                 import fix.parser.message.base.Segment;
-                import fix.parser.message.base.UnderlyingMessage;
                 import java.time.Instant;
                 import java.time.LocalDate;
                 
@@ -187,7 +185,6 @@ public class FixClassesGenerator {
                 package %s;
                 
                 import fix.parser.message.base.Segment;
-                import fix.parser.message.base.UnderlyingMessage;
                 import java.time.Instant;
                 import java.time.LocalDate;
                 
