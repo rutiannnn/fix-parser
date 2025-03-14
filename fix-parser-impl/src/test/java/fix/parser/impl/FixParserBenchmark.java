@@ -4,7 +4,6 @@ import fix.parser.message.base.FixMessage;
 import fix.parser.messages44.NewOrderSingleMessage;
 import fix.parser.spec.FixSpec;
 import fix.parser.spec.FixSpecParser;
-import jdk.jfr.*;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -17,33 +16,11 @@ public class FixParserBenchmark {
     private static final int BENCHMARK_ITERATIONS = 1000_000;
     private static final Runtime RUNTIME = Runtime.getRuntime();
 
-    @Name("fix.parser.BenchmarkEvent")
-    @Label("Fix Parser Benchmark")
-    @Category("Fix Parser")
-    @Description("Fix Parser Benchmark Measurements")
-    static class BenchmarkEvent extends Event {
-        @Label("Benchmark Name")
-        String benchmarkName;
-
-        @Label("Average Time (ns)")
-        double averageTime;
-
-        @Label("Min Time (ns)")
-        long minTime;
-
-        @Label("Max Time (ns)")
-        long maxTime;
-
-        @Label("Memory Delta (bytes)")
-        long memoryDelta;
-    }
-
     private final FixMessageParser parser;
     private final byte[] simpleMessage;
     private final byte[] complexMessage;
     private final NewOrderSingleMessage parsedSimpleMessage;
     private final NewOrderSingleMessage parsedComplexMessage;
-    private final Recording recording;
 
     public FixParserBenchmark() throws Exception {
         // Initialize parser
@@ -70,11 +47,6 @@ public class FixParserBenchmark {
         // Pre-parse messages for getter benchmarks
         parsedSimpleMessage = (NewOrderSingleMessage) parser.parse(simpleMessage);
         parsedComplexMessage = (NewOrderSingleMessage) parser.parse(complexMessage);
-
-        // Initialize JFR recording
-        recording = new Recording();
-        recording.enable("fix.parser.BenchmarkEvent");
-        recording.setDestination(new File("fix-parser-benchmark.jfr").toPath());
     }
 
     private void runBenchmark(String name, Runnable benchmark) {
@@ -110,72 +82,54 @@ public class FixParserBenchmark {
         // Calculate statistics
         LongSummaryStatistics stats = samples.stream().mapToLong(Long::valueOf).summaryStatistics();
 
-        // Create and record JFR event
-        BenchmarkEvent event = new BenchmarkEvent();
-        event.benchmarkName = name;
-        event.averageTime = stats.getAverage();
-        event.minTime = stats.getMin();
-        event.maxTime = stats.getMax();
-        event.memoryDelta = memoryAfter - memoryBefore;
-        event.commit();
-
         // Print results
         System.out.printf("Average time: %.2f ns%n", stats.getAverage());
         System.out.printf("Min time: %d ns%n", stats.getMin());
         System.out.printf("Max time: %d ns%n", stats.getMax());
-        System.out.printf("Memory delta: %d bytes%n", memoryAfter - memoryBefore);
+        System.out.printf("Memory delta: %.2f MB%n", (memoryAfter - memoryBefore) / (1024.0 * 1024.0));
     }
 
     public void runAllBenchmarks() {
-        // Start recording
-        recording.start();
+        // Parsing benchmarks
+        runBenchmark("Parse Simple Message", () -> {
+            FixMessage message = parser.parse(simpleMessage);
+            preventOptimization(message);
+        });
 
-        try {
-            // Parsing benchmarks
-            runBenchmark("Parse Simple Message", () -> {
-                FixMessage message = parser.parse(simpleMessage);
-                preventOptimization(message);
-            });
+        runBenchmark("Parse Complex Message", () -> {
+            FixMessage message = parser.parse(complexMessage);
+            preventOptimization(message);
+        });
 
-            runBenchmark("Parse Complex Message", () -> {
-                FixMessage message = parser.parse(complexMessage);
-                preventOptimization(message);
-            });
+        // Field access benchmarks
+        runBenchmark("Get String Field (Symbol)", () -> {
+            String symbol = parsedSimpleMessage.getInstrument().getSymbol();
+            preventOptimization(symbol);
+        });
 
-            // Field access benchmarks
-            runBenchmark("Get String Field (Symbol)", () -> {
-                String symbol = parsedSimpleMessage.getInstrument().getSymbol();
-                preventOptimization(symbol);
-            });
+        runBenchmark("Get Double Field (Price)", () -> {
+            double price = parsedSimpleMessage.getPrice();
+            preventOptimization(price);
+        });
 
-            runBenchmark("Get Double Field (Price)", () -> {
-                double price = parsedSimpleMessage.getPrice();
-                preventOptimization(price);
-            });
+        runBenchmark("Get Int Field (OrderQty)", () -> {
+            double orderQty = parsedSimpleMessage.getOrderQtyData().getOrderQty();
+            preventOptimization(orderQty);
+        });
 
-            runBenchmark("Get Int Field (OrderQty)", () -> {
-                double orderQty = parsedSimpleMessage.getOrderQtyData().getOrderQty();
-                preventOptimization(orderQty);
-            });
+        runBenchmark("Get Repeating Group (Parties)", () -> {
+            var parties = parsedComplexMessage.getParties().getPartyIDs();
+            preventOptimization(parties);
+        });
 
-            runBenchmark("Get Repeating Group (Parties)", () -> {
-                var parties = parsedComplexMessage.getParties().getPartyIDs();
-                preventOptimization(parties);
-            });
-
-            runBenchmark("Get All Fields", () -> {
-                String symbol = parsedSimpleMessage.getInstrument().getSymbol();
-                double price = parsedSimpleMessage.getPrice();
-                double orderQty = parsedSimpleMessage.getOrderQtyData().getOrderQty();
-                String clOrdId = parsedSimpleMessage.getClOrdID();
-                char side = parsedSimpleMessage.getSide();
-                preventOptimization(symbol, price, orderQty, clOrdId, side);
-            });
-        } finally {
-            // Stop and dump recording
-            recording.stop();
-            recording.close();
-        }
+        runBenchmark("Get All Fields", () -> {
+            String symbol = parsedSimpleMessage.getInstrument().getSymbol();
+            double price = parsedSimpleMessage.getPrice();
+            double orderQty = parsedSimpleMessage.getOrderQtyData().getOrderQty();
+            String clOrdId = parsedSimpleMessage.getClOrdID();
+            char side = parsedSimpleMessage.getSide();
+            preventOptimization(symbol, price, orderQty, clOrdId, side);
+        });
     }
 
     // Prevent JVM from optimizing away unused values
