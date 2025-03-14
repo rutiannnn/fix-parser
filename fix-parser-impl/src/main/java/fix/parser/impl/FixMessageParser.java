@@ -67,16 +67,12 @@ public class FixMessageParser {
         while (start < messageBytes.length) {
             int equalsIndex = find(messageBytes, EQUALS_SIGN, start);
 
-            tags[fieldIndex] = Integer.parseInt(
-                new String(messageBytes, start, equalsIndex - start, StandardCharsets.ISO_8859_1)
-            );
+            tags[fieldIndex] = parsePositiveInt(messageBytes, start, equalsIndex - start);
             valuePositions[fieldIndex] = equalsIndex + 1;
 
             final int separatorIndex;
             if (spec.fieldsByNumber().get(tags[fieldIndex]).type() == FixType.DATA) {
-                valueLengths[fieldIndex] = Integer.parseInt(
-                    new String(messageBytes, valuePositions[fieldIndex - 1], valueLengths[fieldIndex - 1], StandardCharsets.ISO_8859_1)
-                );
+                valueLengths[fieldIndex] = parsePositiveInt(messageBytes, valuePositions[fieldIndex - 1], valueLengths[fieldIndex - 1]);
                 separatorIndex = valuePositions[fieldIndex] + valueLengths[fieldIndex];
             } else {
                 separatorIndex = find(messageBytes, FIELD_SEPARATOR, start);
@@ -228,9 +224,7 @@ public class FixMessageParser {
             // Check if current tag is a repeating group counter (NoXXX field)
             FieldDef field = spec.fieldsByNumber().get(tags[i]);
             if (field != null && field.type() == FixType.NUMINGROUP) {
-                int numInGroup = Integer.parseInt(
-                    new String(message.rawMessage(), valuePositions[i], valueLengths[i], StandardCharsets.ISO_8859_1)
-                );
+                int numInGroup = parsePositiveInt(message.rawMessage(), valuePositions[i], valueLengths[i]);
 
                 if (numInGroup > 0) {
                     // First field after counter is the first field of the group
@@ -272,5 +266,14 @@ public class FixMessageParser {
             pos++;
         }
         return end;
+    }
+
+    private static int parsePositiveInt(byte[] bytes, int offset, int length) {
+        int result = 0;
+        final int end = offset + length;
+        for (int i = offset; i < end; i++) {
+            result = (result * 10) + (bytes[i] - '0');
+        }
+        return result;
     }
 }
