@@ -1,0 +1,48 @@
+Running benchmark: Parse Simple Message
+Average time: 605.10 ns
+Min time: 400 ns
+Max time: 461600 ns
+Memory delta: 1004.63 MB
+No GC occurred during benchmark
+
+Running benchmark: Parse Complex Message
+Average time: 1029.95 ns
+Min time: 800 ns
+Max time: 450000 ns
+Memory delta: 1819.81 MB
+No GC occurred during benchmark
+
+Running benchmark: Get String Field (Symbol)
+Average time: 58.12 ns
+Min time: 0 ns
+Max time: 665000 ns
+Memory delta: 51.81 MB
+No GC occurred during benchmark
+
+Running benchmark: Get Double Field (Price)
+Average time: 77.64 ns
+Min time: 0 ns
+Max time: 69300 ns
+Memory delta: 131.81 MB
+No GC occurred during benchmark
+
+Running benchmark: Get Int Field (OrderQty)
+Average time: 96.59 ns
+Min time: 0 ns
+Max time: 119500 ns
+Memory delta: 127.81 MB
+No GC occurred during benchmark
+
+Running benchmark: Get Repeating Group (Parties)
+Average time: 59.90 ns
+Min time: 0 ns
+Max time: 96100 ns
+Memory delta: 79.81 MB
+No GC occurred during benchmark
+
+Running benchmark: Get All Fields
+Average time: 235.08 ns
+Min time: 100 ns
+Max time: 2536000 ns
+Memory delta: 367.81 MB
+No GC occurred during benchmark
