@@ -3,17 +3,16 @@ package fix.parser.impl;
 import fix.parser.message.base.FixMessage;
 import fix.parser.message.base.Segment;
 import fix.parser.message.base.UnderlyingMessage;
-import fix.parser.messages44.Fields;
+import fix.parser.messages44.*;
 import fix.parser.spec.FieldDef;
 import fix.parser.spec.FixSpec;
 import fix.parser.spec.FixType;
-import fix.parser.spec.MessageDef;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static fix.parser.messages44.MessageTypes.*;
 
 public class FixMessageParser {
     private static final byte FIELD_SEPARATOR = 0x01;  // SOH character
@@ -21,12 +20,10 @@ public class FixMessageParser {
 
     private final FixSpec spec;
     private final String basePackage;
-    private final Map<String, Class<? extends FixMessage>> messageTypeCache;
 
     public FixMessageParser(FixSpec spec, String basePackage) {
         this.spec = spec;
         this.basePackage = basePackage;
-        this.messageTypeCache = new HashMap<>();
     }
 
     public FixMessage parse(byte[] messageBytes) {
@@ -51,27 +48,7 @@ public class FixMessageParser {
             StandardCharsets.ISO_8859_1
         );
 
-        Class<? extends FixMessage> messageClass = getMessageClass(msgType);
-        return createMessage(messageClass, segment);
-    }
-
-    private Class<? extends FixMessage> getMessageClass(String msgType) {
-        Class<? extends FixMessage> messageClass = messageTypeCache.get(msgType);
-        if (messageClass == null) {
-            MessageDef messageDef = spec.messages().stream()
-                .filter(m -> m.msgtype().equals(msgType))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Unknown message type: " + msgType));
-
-            String className = basePackage + "." + messageDef.name() + "Message";
-            try {
-                messageClass = (Class<? extends FixMessage>) Class.forName(className);
-                messageTypeCache.put(msgType, messageClass);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Failed to load message class: " + className, e);
-            }
-        }
-        return messageClass;
+        return createMessage(msgType, segment);
     }
 
     private int countMaximumFields(byte[] messageBytes) {
@@ -139,12 +116,102 @@ public class FixMessageParser {
         return -1;
     }
 
-    private FixMessage createMessage(Class<? extends FixMessage> messageClass, Segment segment) {
-        try {
-            return messageClass.getConstructor(Segment.class).newInstance(segment);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create message instance", e);
-        }
+    private FixMessage createMessage(String msgType, Segment segment) {
+        return switch (msgType) {
+            case HEARTBEAT -> new HeartbeatMessage(segment);
+            case LOGON -> new LogonMessage(segment);
+            case TESTREQUEST -> new TestRequestMessage(segment);
+            case RESENDREQUEST -> new ResendRequestMessage(segment);
+            case REJECT -> new RejectMessage(segment);
+            case SEQUENCERESET -> new SequenceResetMessage(segment);
+            case LOGOUT -> new LogoutMessage(segment);
+            case BUSINESSMESSAGEREJECT -> new BusinessMessageRejectMessage(segment);
+            case USERREQUEST -> new UserRequestMessage(segment);
+            case USERRESPONSE -> new UserResponseMessage(segment);
+            case ADVERTISEMENT -> new AdvertisementMessage(segment);
+            case INDICATIONOFINTEREST -> new IndicationOfInterestMessage(segment);
+            case NEWS -> new NewsMessage(segment);
+            case EMAIL -> new EmailMessage(segment);
+            case QUOTEREQUEST -> new QuoteRequestMessage(segment);
+            case QUOTERESPONSE -> new QuoteResponseMessage(segment);
+            case QUOTEREQUESTREJECT -> new QuoteRequestRejectMessage(segment);
+            case RFQREQUEST -> new RFQRequestMessage(segment);
+            case QUOTE -> new QuoteMessage(segment);
+            case QUOTECANCEL -> new QuoteCancelMessage(segment);
+            case QUOTESTATUSREQUEST -> new QuoteStatusRequestMessage(segment);
+            case QUOTESTATUSREPORT -> new QuoteStatusReportMessage(segment);
+            case MASSQUOTE -> new MassQuoteMessage(segment);
+            case MASSQUOTEACKNOWLEDGEMENT -> new MassQuoteAcknowledgementMessage(segment);
+            case MARKETDATAREQUEST -> new MarketDataRequestMessage(segment);
+            case MARKETDATASNAPSHOTFULLREFRESH -> new MarketDataSnapshotFullRefreshMessage(segment);
+            case MARKETDATAINCREMENTALREFRESH -> new MarketDataIncrementalRefreshMessage(segment);
+            case MARKETDATAREQUESTREJECT -> new MarketDataRequestRejectMessage(segment);
+            case SECURITYDEFINITIONREQUEST -> new SecurityDefinitionRequestMessage(segment);
+            case SECURITYDEFINITION -> new SecurityDefinitionMessage(segment);
+            case SECURITYTYPEREQUEST -> new SecurityTypeRequestMessage(segment);
+            case SECURITYTYPES -> new SecurityTypesMessage(segment);
+            case SECURITYLISTREQUEST -> new SecurityListRequestMessage(segment);
+            case SECURITYLIST -> new SecurityListMessage(segment);
+            case DERIVATIVESECURITYLISTREQUEST -> new DerivativeSecurityListRequestMessage(segment);
+            case DERIVATIVESECURITYLIST -> new DerivativeSecurityListMessage(segment);
+            case SECURITYSTATUSREQUEST -> new SecurityStatusRequestMessage(segment);
+            case SECURITYSTATUS -> new SecurityStatusMessage(segment);
+            case TRADINGSESSIONSTATUSREQUEST -> new TradingSessionStatusRequestMessage(segment);
+            case TRADINGSESSIONSTATUS -> new TradingSessionStatusMessage(segment);
+            case NEWORDERSINGLE -> new NewOrderSingleMessage(segment);
+            case EXECUTIONREPORT -> new ExecutionReportMessage(segment);
+            case DONTKNOWTRADE -> new DontKnowTradeMessage(segment);
+            case ORDERCANCELREPLACEREQUEST -> new OrderCancelReplaceRequestMessage(segment);
+            case ORDERCANCELREQUEST -> new OrderCancelRequestMessage(segment);
+            case ORDERCANCELREJECT -> new OrderCancelRejectMessage(segment);
+            case ORDERSTATUSREQUEST -> new OrderStatusRequestMessage(segment);
+            case ORDERMASSCANCELREQUEST -> new OrderMassCancelRequestMessage(segment);
+            case ORDERMASSCANCELREPORT -> new OrderMassCancelReportMessage(segment);
+            case ORDERMASSSTATUSREQUEST -> new OrderMassStatusRequestMessage(segment);
+            case NEWORDERCROSS -> new NewOrderCrossMessage(segment);
+            case CROSSORDERCANCELREPLACEREQUEST -> new CrossOrderCancelReplaceRequestMessage(segment);
+            case CROSSORDERCANCELREQUEST -> new CrossOrderCancelRequestMessage(segment);
+            case NEWORDERMULTILEG -> new NewOrderMultilegMessage(segment);
+            case MULTILEGORDERCANCELREPLACEREQUEST -> new MultilegOrderCancelReplaceRequestMessage(segment);
+            case BIDREQUEST -> new BidRequestMessage(segment);
+            case BIDRESPONSE -> new BidResponseMessage(segment);
+            case NEWORDERLIST -> new NewOrderListMessage(segment);
+            case LISTSTRIKEPRICE -> new ListStrikePriceMessage(segment);
+            case LISTSTATUS -> new ListStatusMessage(segment);
+            case LISTEXECUTE -> new ListExecuteMessage(segment);
+            case LISTCANCELREQUEST -> new ListCancelRequestMessage(segment);
+            case LISTSTATUSREQUEST -> new ListStatusRequestMessage(segment);
+            case ALLOCATIONINSTRUCTION -> new AllocationInstructionMessage(segment);
+            case ALLOCATIONINSTRUCTIONACK -> new AllocationInstructionAckMessage(segment);
+            case ALLOCATIONREPORT -> new AllocationReportMessage(segment);
+            case ALLOCATIONREPORTACK -> new AllocationReportAckMessage(segment);
+            case CONFIRMATION -> new ConfirmationMessage(segment);
+            case CONFIRMATIONACK -> new ConfirmationAckMessage(segment);
+            case CONFIRMATIONREQUEST -> new ConfirmationRequestMessage(segment);
+            case SETTLEMENTINSTRUCTIONS -> new SettlementInstructionsMessage(segment);
+            case SETTLEMENTINSTRUCTIONREQUEST -> new SettlementInstructionRequestMessage(segment);
+            case TRADECAPTUREREPORTREQUEST -> new TradeCaptureReportRequestMessage(segment);
+            case TRADECAPTUREREPORTREQUESTACK -> new TradeCaptureReportRequestAckMessage(segment);
+            case TRADECAPTUREREPORT -> new TradeCaptureReportMessage(segment);
+            case TRADECAPTUREREPORTACK -> new TradeCaptureReportAckMessage(segment);
+            case REGISTRATIONINSTRUCTIONS -> new RegistrationInstructionsMessage(segment);
+            case REGISTRATIONINSTRUCTIONSRESPONSE -> new RegistrationInstructionsResponseMessage(segment);
+            case POSITIONMAINTENANCEREQUEST -> new PositionMaintenanceRequestMessage(segment);
+            case POSITIONMAINTENANCEREPORT -> new PositionMaintenanceReportMessage(segment);
+            case REQUESTFORPOSITIONS -> new RequestForPositionsMessage(segment);
+            case REQUESTFORPOSITIONSACK -> new RequestForPositionsAckMessage(segment);
+            case POSITIONREPORT -> new PositionReportMessage(segment);
+            case ASSIGNMENTREPORT -> new AssignmentReportMessage(segment);
+            case COLLATERALREQUEST -> new CollateralRequestMessage(segment);
+            case COLLATERALASSIGNMENT -> new CollateralAssignmentMessage(segment);
+            case COLLATERALRESPONSE -> new CollateralResponseMessage(segment);
+            case COLLATERALREPORT -> new CollateralReportMessage(segment);
+            case COLLATERALINQUIRY -> new CollateralInquiryMessage(segment);
+            case NETWORKSTATUSREQUEST -> new NetworkStatusRequestMessage(segment);
+            case NETWORKSTATUSRESPONSE -> new NetworkStatusResponseMessage(segment);
+            case COLLATERALINQUIRYACK -> new CollateralInquiryAckMessage(segment);
+            default -> throw new IllegalArgumentException("Unsupported message type: " + msgType);
+        };
     }
 
     private Segment[] parseRepeatingGroups(UnderlyingMessage message, int start, int end,

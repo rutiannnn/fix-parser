@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 
 public class FixParserBenchmark {
-    private static final int WARMUP_ITERATIONS = 1000;
-    private static final int BENCHMARK_ITERATIONS = 10_000;
+    private static final int WARMUP_ITERATIONS = 100_000;
+    private static final int BENCHMARK_ITERATIONS = 1000_000;
     private static final Runtime RUNTIME = Runtime.getRuntime();
 
     @Name("fix.parser.BenchmarkEvent")
