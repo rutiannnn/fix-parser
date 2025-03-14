@@ -16,7 +16,6 @@ import java.util.Map;
 public class FixSpecParser {
     private final Document document;
     private final Map<String, FieldDef> fieldMap;
-    private final Map<Integer, FieldDef> fieldMapByNumber;
     private final Map<String, ComponentDef> componentMap;
 
     public FixSpecParser(File xmlFile) throws Exception {
@@ -24,7 +23,6 @@ public class FixSpecParser {
         DocumentBuilder builder = factory.newDocumentBuilder();
         this.document = builder.parse(xmlFile);
         this.fieldMap = new HashMap<>();
-        this.fieldMapByNumber = new HashMap<>();
         this.componentMap = new HashMap<>();
     }
 
@@ -61,7 +59,7 @@ public class FixSpecParser {
             }
         }
 
-        return new FixSpec(major, minor, header, trailer, messages, componentMap, fieldMap, fieldMapByNumber);
+        return new FixSpec(major, minor, header, trailer, messages, componentMap, fieldMap);
     }
 
     private void buildFieldMap(Element root) {
@@ -77,7 +75,6 @@ public class FixSpecParser {
                     int number = Integer.parseInt(fieldElement.getAttribute("number"));
                     FixType type = FixType.fromString(fieldElement.getAttribute("type"));
                     fieldMap.put(name, new FieldDef(number, name, type));
-                    fieldMapByNumber.put(number, new FieldDef(number, name, type));
                 }
             }
         }

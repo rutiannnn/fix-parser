@@ -11,17 +11,26 @@ import fix.parser.spec.FixType;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static fix.parser.messages44.MessageTypes.*;
 
 public class FixMessageParser {
     private static final byte FIELD_SEPARATOR = 0x01;  // SOH character
     private static final byte EQUALS_SIGN = 0x3D;
-
-    private final FixSpec spec;
+    private final Set<Integer> dataFields;
+    private final Set<Integer> numInGroupFields;
 
     public FixMessageParser(FixSpec spec) {
-        this.spec = spec;
+        this.dataFields = spec.fields().values().stream()
+            .filter(e -> e.type() == FixType.DATA)
+            .map(FieldDef::number)
+            .collect(Collectors.toUnmodifiableSet());
+        this.numInGroupFields = spec.fields().values().stream()
+            .filter(e -> e.type() == FixType.NUMINGROUP)
+            .map(FieldDef::number)
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     public FixMessage parse(byte[] messageBytes) {
@@ -71,7 +80,7 @@ public class FixMessageParser {
             valuePositions[fieldIndex] = equalsIndex + 1;
 
             final int separatorIndex;
-            if (spec.fieldsByNumber().get(tags[fieldIndex]).type() == FixType.DATA) {
+            if (dataFields.contains(tags[fieldIndex])) {
                 valueLengths[fieldIndex] = parsePositiveInt(messageBytes, valuePositions[fieldIndex - 1], valueLengths[fieldIndex - 1]);
                 separatorIndex = valuePositions[fieldIndex] + valueLengths[fieldIndex];
             } else {
@@ -222,8 +231,7 @@ public class FixMessageParser {
 
         for (int i = start; i < end; i++) {
             // Check if current tag is a repeating group counter (NoXXX field)
-            FieldDef field = spec.fieldsByNumber().get(tags[i]);
-            if (field != null && field.type() == FixType.NUMINGROUP) {
+            if (numInGroupFields.contains(tags[i])) {
                 int numInGroup = parsePositiveInt(message.rawMessage(), valuePositions[i], valueLengths[i]);
 
                 if (numInGroup > 0) {
