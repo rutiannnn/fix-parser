@@ -1,10 +1,11 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="FixParserBenchmark" type="Application" factoryName="Application" nameIsGenerated="true">
-    <option name="MAIN_CLASS_NAME" value="fix.parser.benchmark.FixParserBenchmark" />
-    <module name="fix-parser" />
+    <option name="MAIN_CLASS_NAME" value="fix.parser.impl.FixParserBenchmark" />
+    <module name="fix-parser-impl" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/fix-parser-impl/target" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="fix.parser.benchmark.*" />
+        <option name="PATTERN" value="fix.parser.impl.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
