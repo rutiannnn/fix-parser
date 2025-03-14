@@ -41,10 +41,11 @@ public class FixMessageParser {
             parseRepeatingGroups(underlyingMessage, 0, fieldCount, tags, valuePositions, valueLengths)
         );
 
+        int msgTypeIndex = findTagIndex(tags, Fields.MSGTYPE, 0, fieldCount);
         String msgType = new String(
             messageBytes,
-            valuePositions[findTagIndex(tags, Fields.MSGTYPE, 0, fieldCount)],
-            valueLengths[findTagIndex(tags, Fields.MSGTYPE, 0, fieldCount)],
+            valuePositions[msgTypeIndex],
+            valueLengths[msgTypeIndex],
             StandardCharsets.ISO_8859_1
         );
 
@@ -66,7 +67,7 @@ public class FixMessageParser {
         int start = 0;
 
         while (start < messageBytes.length) {
-            int equalsIndex = findEqualsSign(messageBytes, start, messageBytes.length);
+            int equalsIndex = find(messageBytes, EQUALS_SIGN, start);
 
             tags[fieldIndex] = Integer.parseInt(
                 new String(messageBytes, start, equalsIndex - start, StandardCharsets.ISO_8859_1)
@@ -80,7 +81,7 @@ public class FixMessageParser {
                 );
                 separatorIndex = valuePositions[fieldIndex] + valueLengths[fieldIndex];
             } else {
-                separatorIndex = findNextSeparator(messageBytes, start);
+                separatorIndex = find(messageBytes, FIELD_SEPARATOR, start);
                 valueLengths[fieldIndex] = separatorIndex - equalsIndex - 1;
             }
 
@@ -98,18 +99,25 @@ public class FixMessageParser {
         return -1;
     }
 
-    private int findNextSeparator(byte[] bytes, int start) {
-        for (int i = start; i < bytes.length; i++) {
-            if (bytes[i] == FIELD_SEPARATOR) {
-                return i;
-            }
-        }
-        return bytes.length;
-    }
+    private int find(byte[] bytes, byte target, int start) {
+        final int len = bytes.length;
+        int i = start;
 
-    private int findEqualsSign(byte[] bytes, int start, int end) {
-        for (int i = start; i < end; i++) {
-            if (bytes[i] == EQUALS_SIGN) {
+        // Process 8 bytes at a time
+        for (; i <= len - 8; i += 8) {
+            if (bytes[i] == target) return i;
+            if (bytes[i + 1] == target) return i + 1;
+            if (bytes[i + 2] == target) return i + 2;
+            if (bytes[i + 3] == target) return i + 3;
+            if (bytes[i + 4] == target) return i + 4;
+            if (bytes[i + 5] == target) return i + 5;
+            if (bytes[i + 6] == target) return i + 6;
+            if (bytes[i + 7] == target) return i + 7;
+        }
+
+        // Handle remaining bytes
+        for (; i < len; i++) {
+            if (bytes[i] == target) {
                 return i;
             }
         }

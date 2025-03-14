@@ -66,6 +66,7 @@ public class FixParserBenchmark {
 
         // Force GC before measurement
         System.gc();
+        Runtime.getRuntime().runFinalization();
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
