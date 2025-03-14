@@ -17,14 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FixMessageParserTest {
     private static FixMessageParser parser;
-    private static final String BASE_PACKAGE = "fix.parser.messages44";
 
     @BeforeAll
     static void setUp() throws Exception {
         File specFile = new File("../fix-parser-messages44/src/main/resources/FIX44.xml");
         FixSpecParser specParser = new FixSpecParser(specFile);
         FixSpec spec = specParser.parse();
-        parser = new FixMessageParser(spec, BASE_PACKAGE);
+        parser = new FixMessageParser(spec);
     }
 
     @Test

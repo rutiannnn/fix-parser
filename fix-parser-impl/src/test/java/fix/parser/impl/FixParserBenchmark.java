@@ -31,7 +31,7 @@ public class FixParserBenchmark {
         File specFile = new File("../../fix-parser-messages44/src/main/resources/FIX44.xml");
         FixSpecParser specParser = new FixSpecParser(specFile);
         FixSpec spec = specParser.parse();
-        parser = new FixMessageParser(spec, "fix.parser.messages44");
+        parser = new FixMessageParser(spec);
 
         // Simple message with basic fields
         simpleMessage = (

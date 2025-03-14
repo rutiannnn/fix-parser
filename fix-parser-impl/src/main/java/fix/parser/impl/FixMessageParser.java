@@ -19,11 +19,9 @@ public class FixMessageParser {
     private static final byte EQUALS_SIGN = 0x3D;
 
     private final FixSpec spec;
-    private final String basePackage;
 
-    public FixMessageParser(FixSpec spec, String basePackage) {
+    public FixMessageParser(FixSpec spec) {
         this.spec = spec;
-        this.basePackage = basePackage;
     }
 
     public FixMessage parse(byte[] messageBytes) {
