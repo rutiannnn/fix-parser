@@ -76,7 +76,7 @@ public class FixMessageParser {
             final int separatorIndex;
             if (spec.fieldsByNumber().get(tags[fieldIndex]).type() == FixType.DATA) {
                 valueLengths[fieldIndex] = Integer.parseInt(
-                    new String(messageBytes, valuePositions[fieldIndex - 1], valueLengths[fieldIndex - 1], StandardCharsets.ISO_8859_1)
+                    new String(messageBytes, valuePositions[fieldIndex - 1], valueLengths[fieldIndex - 1], StandardCharsets.ISO_8859_1).intern()
                 );
                 separatorIndex = valuePositions[fieldIndex] + valueLengths[fieldIndex];
             } else {
@@ -223,7 +223,7 @@ public class FixMessageParser {
             FieldDef field = spec.fieldsByNumber().get(tags[i]);
             if (field != null && field.type() == FixType.NUMINGROUP) {
                 int numInGroup = Integer.parseInt(
-                    new String(message.rawMessage(), valuePositions[i], valueLengths[i], StandardCharsets.ISO_8859_1)
+                    new String(message.rawMessage(), valuePositions[i], valueLengths[i], StandardCharsets.ISO_8859_1).intern()
                 );
 
                 if (numInGroup > 0) {
